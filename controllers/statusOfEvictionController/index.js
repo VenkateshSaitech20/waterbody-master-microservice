@@ -8,7 +8,7 @@ const upsertData = async (req, res) => {
     try {
         const slug = generateSlug(req.body.name);
         if (slug) {
-            const isSlugExist = await prisma.master_boundary_drop_points.findFirst({ where: { slug: slug, ...(req.body.id && { NOT: { id: parseInt(req.body.id) } }) } });
+            const isSlugExist = await prisma.master_status_of_eviction.findFirst({ where: { slug: slug, ...(req.body.id && { NOT: { id: parseInt(req.body.id) } }) } });
             if (isSlugExist) {
                 return res.json({ result: false, message: { name: 'Name ' + respMsg.isAlreadyExist } });
             }
@@ -17,12 +17,12 @@ const upsertData = async (req, res) => {
         if (req.body.id) {
             req.body.updatedBy = String(req.user.id);
             req.body.updatedAt = new Date();
-            await prisma.master_boundary_drop_points.update({ where: { id: req.body.id }, data: req.body });
+            await prisma.master_status_of_eviction.update({ where: { id: req.body.id }, data: req.body });
             await updateApiDataVersion(req.user.id);
             return res.json({ result: true, message: 'Name ' + respMsg.updatedSuccess })
         } else {
             req.body.createdBy = String(req.user.id);
-            await prisma.master_boundary_drop_points.create({ data: req.body });
+            await prisma.master_status_of_eviction.create({ data: req.body });
             await updateApiDataVersion(req.user.id);
             return res.json({ result: true, message: 'Name ' + respMsg.addedSuccess })
         }
@@ -49,13 +49,13 @@ const getData = async (req, res) => {
         let records;
         let totalPages;
         if (page && pageSize) {
-            const totalCount = await prisma.master_boundary_drop_points.count({ where: queryFilter });
+            const totalCount = await prisma.master_status_of_eviction.count({ where: queryFilter });
             if (skip >= totalCount) {
                 skip = totalCount - pageSize;
             }
             if (skip < 0) skip = 0;
             totalPages = Math.ceil(totalCount / pageSize);
-            records = await prisma.master_boundary_drop_points.findMany({
+            records = await prisma.master_status_of_eviction.findMany({
                 where: queryFilter,
                 skip,
                 take: pageSize,
@@ -66,7 +66,7 @@ const getData = async (req, res) => {
                 }
             });
         } else {
-            records = await prisma.master_boundary_drop_points.findMany({
+            records = await prisma.master_status_of_eviction.findMany({
                 where: queryFilter,
                 select: {
                     id: true,
@@ -88,9 +88,9 @@ const getData = async (req, res) => {
 const getDataById = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const ayacutnoncultivation = await prisma.master_boundary_drop_points.findFirst({ where: { id }, select: { id: true, name: true, slug: true } });
-        if (ayacutnoncultivation) {
-            return res.json({ result: true, message: ayacutnoncultivation })
+        const data = await prisma.master_status_of_eviction.findFirst({ where: { id }, select: { id: true, name: true, slug: true } });
+        if (data) {
+            return res.json({ result: true, message: data })
         } else {
             return res.json({ result: true, message: respMsg.noDataFound });
         }
@@ -102,8 +102,8 @@ const getDataById = async (req, res) => {
 const deleteData = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const deletedAvailability = await prisma.master_boundary_drop_points.delete({ where: { id } });
-        if (deletedAvailability) {
+        const deletedData = await prisma.master_status_of_eviction.delete({ where: { id } });
+        if (deletedData) {
             await updateApiDataVersion(req.user.id);
             return res.json({ result: true, message: 'Name ' + respMsg.deletedSuccess });
         }

@@ -8,7 +8,7 @@ const upsertData = async (req, res) => {
     try {
         const slug = generateSlug(req.body.name);
         if (slug) {
-            const isSlugExist = await prisma.master_boundary_drop_points.findFirst({ where: { slug: slug, ...(req.body.id && { NOT: { id: parseInt(req.body.id) } }) } });
+            const isSlugExist = await prisma.master_encroachers_alternative_housing.findFirst({ where: { slug: slug, ...(req.body.id && { NOT: { id: parseInt(req.body.id) } }) } });
             if (isSlugExist) {
                 return res.json({ result: false, message: { name: 'Name ' + respMsg.isAlreadyExist } });
             }
@@ -17,16 +17,17 @@ const upsertData = async (req, res) => {
         if (req.body.id) {
             req.body.updatedBy = String(req.user.id);
             req.body.updatedAt = new Date();
-            await prisma.master_boundary_drop_points.update({ where: { id: req.body.id }, data: req.body });
+            await prisma.master_encroachers_alternative_housing.update({ where: { id: req.body.id }, data: req.body });
             await updateApiDataVersion(req.user.id);
             return res.json({ result: true, message: 'Name ' + respMsg.updatedSuccess })
         } else {
             req.body.createdBy = String(req.user.id);
-            await prisma.master_boundary_drop_points.create({ data: req.body });
+            await prisma.master_encroachers_alternative_housing.create({ data: req.body });
             await updateApiDataVersion(req.user.id);
             return res.json({ result: true, message: 'Name ' + respMsg.addedSuccess })
         }
     } catch (error) {
+        console.log("error:", error);
         return res.json({ result: false, message: error });
     }
 }
@@ -34,7 +35,6 @@ const upsertData = async (req, res) => {
 const getData = async (req, res) => {
     try {
         const { searchText, page, pageSize } = req.body;
-        let skip = (page - 1) * pageSize;
         const queryFilter = {
             AND: [
                 ...(searchText ? [
@@ -49,13 +49,14 @@ const getData = async (req, res) => {
         let records;
         let totalPages;
         if (page && pageSize) {
-            const totalCount = await prisma.master_boundary_drop_points.count({ where: queryFilter });
+            let skip = (page - 1) * pageSize;
+            const totalCount = await prisma.master_encroachers_alternative_housing.count({ where: queryFilter });
             if (skip >= totalCount) {
                 skip = totalCount - pageSize;
             }
             if (skip < 0) skip = 0;
             totalPages = Math.ceil(totalCount / pageSize);
-            records = await prisma.master_boundary_drop_points.findMany({
+            records = await prisma.master_encroachers_alternative_housing.findMany({
                 where: queryFilter,
                 skip,
                 take: pageSize,
@@ -66,7 +67,7 @@ const getData = async (req, res) => {
                 }
             });
         } else {
-            records = await prisma.master_boundary_drop_points.findMany({
+            records = await prisma.master_encroachers_alternative_housing.findMany({
                 where: queryFilter,
                 select: {
                     id: true,
@@ -80,6 +81,7 @@ const getData = async (req, res) => {
         } else {
             return res.json({ result: true, message: respMsg.noDataFound });
         }
+
     } catch (error) {
         return res.json({ result: false, message: error });
     }
@@ -88,9 +90,9 @@ const getData = async (req, res) => {
 const getDataById = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const ayacutnoncultivation = await prisma.master_boundary_drop_points.findFirst({ where: { id }, select: { id: true, name: true, slug: true } });
-        if (ayacutnoncultivation) {
-            return res.json({ result: true, message: ayacutnoncultivation })
+        const availability = await prisma.master_encroachers_alternative_housing.findFirst({ where: { id }, select: { id: true, name: true, slug: true } });
+        if (availability) {
+            return res.json({ result: true, message: availability })
         } else {
             return res.json({ result: true, message: respMsg.noDataFound });
         }
@@ -102,12 +104,15 @@ const getDataById = async (req, res) => {
 const deleteData = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const deletedAvailability = await prisma.master_boundary_drop_points.delete({ where: { id } });
+        const deletedAvailability = await prisma.master_encroachers_alternative_housing.delete({ where: { id } });
         if (deletedAvailability) {
             await updateApiDataVersion(req.user.id);
             return res.json({ result: true, message: 'Name ' + respMsg.deletedSuccess });
         }
     } catch (error) {
+        if (error.code === 'P2025') {
+            return res.json({ result: false, message: respMsg.noDataFound });
+        }
         return res.json({ result: false, message: error });
     }
 }
